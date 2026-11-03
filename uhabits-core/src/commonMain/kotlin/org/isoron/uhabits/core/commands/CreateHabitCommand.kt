@@ -18,6 +18,8 @@
  */
 package org.isoron.uhabits.core.commands
 
+import org.isoron.platform.time.getToday
+import org.isoron.uhabits.core.models.Entry
 import org.isoron.uhabits.core.models.Habit
 import org.isoron.uhabits.core.models.HabitList
 import org.isoron.uhabits.core.models.ModelFactory
@@ -25,12 +27,18 @@ import org.isoron.uhabits.core.models.ModelFactory
 data class CreateHabitCommand(
     val modelFactory: ModelFactory,
     val habitList: HabitList,
-    val model: Habit
+    val model: Habit,
+    val anchorNegativeHabit: Boolean = false
 ) : Command {
     override fun run() {
         val habit = modelFactory.buildHabit()
         habit.copyFrom(model)
         habitList.add(habit)
+        // A negative habit counts every day without data as a success, so it needs to know the
+        // day it started. We store that as an explicit "did not do it" entry for today.
+        if (anchorNegativeHabit && habit.isInverted && habit.originalEntries.getKnown().isEmpty()) {
+            habit.originalEntries.add(Entry(getToday(), Entry.NO))
+        }
         habit.recompute()
     }
 }

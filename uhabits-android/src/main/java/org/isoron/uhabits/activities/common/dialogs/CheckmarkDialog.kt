@@ -50,12 +50,13 @@ class CheckmarkDialog : AppCompatDialogFragment() {
         val prefs = appComponent.preferences
         view = CheckmarkPopupBinding.inflate(LayoutInflater.from(context))
         val color = requireArguments().getInt("color")
-        arrayOf(view.yesBtn, view.skipBtn).forEach {
-            it.setTextColor(color)
-        }
-        arrayOf(view.noBtn, view.unknownBtn).forEach {
-            it.setTextColor(view.root.sres.getColor(R.attr.contrast60))
-        }
+        val isNegative = requireArguments().getBoolean("negative", false)
+        val mutedColor = view.root.sres.getColor(R.attr.contrast60)
+        // For negative habits the check ("I did it") is the failure and the cross is the success
+        view.yesBtn.setTextColor(if (isNegative) mutedColor else color)
+        view.noBtn.setTextColor(if (isNegative) color else mutedColor)
+        view.skipBtn.setTextColor(color)
+        view.unknownBtn.setTextColor(mutedColor)
         arrayOf(view.yesBtn, view.noBtn, view.skipBtn, view.unknownBtn).forEach {
             it.typeface = getFontAwesome(requireContext())
         }
@@ -63,7 +64,7 @@ class CheckmarkDialog : AppCompatDialogFragment() {
         originalValue = requireArguments().getInt("value")
         view.notes.setText(originalNotes)
         if (!prefs.isSkipEnabled) view.skipBtn.visibility = GONE
-        if (!prefs.areQuestionMarksEnabled) view.unknownBtn.visibility = GONE
+        if (!prefs.areQuestionMarksEnabled || isNegative) view.unknownBtn.visibility = GONE
         view.booleanButtons.visibility = VISIBLE
         val dialog = Dialog(requireContext())
         dialog.setContentView(view.root)

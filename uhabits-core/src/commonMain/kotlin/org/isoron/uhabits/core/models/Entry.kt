@@ -64,16 +64,32 @@ data class Entry(
          */
         const val UNKNOWN = -1
 
+        /**
+         * For negative habits (see [Habit.isInverted]): returns true if the given entry value
+         * counts as a success, that is, if the user did NOT perform the habit. Days without
+         * data ([UNKNOWN]) are successes, and so are skipped days.
+         */
+        fun isInvertedSuccess(value: Int): Boolean {
+            return value != YES_MANUAL && value != YES_AUTO
+        }
+
+        /**
+         * Returns the value that follows [value] when the user taps a checkmark.
+         *
+         * For negative habits ([isNegative]) there is no "unanswered" state, since days without
+         * data already count as successes, so the question mark is never offered.
+         */
         fun nextToggleValue(
             value: Int,
             isSkipEnabled: Boolean,
-            areQuestionMarksEnabled: Boolean
+            areQuestionMarksEnabled: Boolean,
+            isNegative: Boolean = false
         ): Int {
             return when (value) {
                 YES_AUTO -> YES_MANUAL
                 YES_MANUAL -> if (isSkipEnabled) SKIP else NO
                 SKIP -> NO
-                NO -> if (areQuestionMarksEnabled) UNKNOWN else YES_MANUAL
+                NO -> if (areQuestionMarksEnabled && !isNegative) UNKNOWN else YES_MANUAL
                 UNKNOWN -> YES_MANUAL
                 else -> YES_MANUAL
             }

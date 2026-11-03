@@ -55,10 +55,10 @@
         <activity-alias
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/main_activity_title"
+            android:label="Loop Negativi"
             android:launchMode="singleTop"
             android:targetActivity=".activities.habits.list.ListHabitsActivity">
-            <intent-filter android:label="@string/main_activity_title">
+            <intent-filter android:label="Loop Negativi">
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
@@ -279,7 +279,7 @@
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="org.isoron.uhabits"
+            android:authorities="${applicationId}"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

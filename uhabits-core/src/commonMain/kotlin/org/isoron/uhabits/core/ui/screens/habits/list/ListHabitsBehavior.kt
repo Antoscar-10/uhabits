@@ -70,9 +70,12 @@ open class ListHabitsBehavior(
             screen.showCheckmarkPopup(
                 entry.value,
                 entry.notes,
-                habit.color
+                habit.color,
+                habit.isInverted
             ) { newValue: Int, newNotes: String ->
-                if (newValue != entry.value && newValue == YES_MANUAL) screen.showConfetti(habit.color, x, y)
+                if (newValue != entry.value && newValue == YES_MANUAL && !habit.isInverted) {
+                    screen.showConfetti(habit.color, x, y)
+                }
                 commandRunner.run(CreateRepetitionCommand(habitList, habit, date, newValue, newNotes))
             }
         }
@@ -147,7 +150,8 @@ open class ListHabitsBehavior(
         commandRunner.run(
             CreateRepetitionCommand(habitList, habit, date, value, notes)
         )
-        if (value == YES_MANUAL) screen.showConfetti(habit.color, x, y)
+        // For negative habits, a check means that the user did the thing they wanted to avoid.
+        if (value == YES_MANUAL && !habit.isInverted) screen.showConfetti(habit.color, x, y)
     }
 
     enum class Message {
@@ -183,6 +187,7 @@ open class ListHabitsBehavior(
             selectedValue: Int,
             notes: String,
             color: PaletteColor,
+            isNegative: Boolean = false,
             callback: CheckMarkDialogCallback
         )
         fun showSendBugReportToDeveloperScreen(log: String)

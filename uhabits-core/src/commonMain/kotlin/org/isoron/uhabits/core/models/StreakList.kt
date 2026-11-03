@@ -41,14 +41,16 @@ class StreakList {
         to: LocalDate,
         isNumerical: Boolean,
         targetValue: Double,
-        targetType: NumericalHabitType
+        targetType: NumericalHabitType,
+        isInverted: Boolean = false
     ) {
         list.clear()
         val today = getToday()
         val dates = computedEntries
             .getByInterval(from, to)
             .filter {
-                !it.date.isNewerThan(today) && it.completed
+                !it.date.isNewerThan(today) &&
+                    (if (isInverted) Entry.isInvertedSuccess(it.value) else it.completed)
             }
             .map { it.date }
             .toTypedArray()

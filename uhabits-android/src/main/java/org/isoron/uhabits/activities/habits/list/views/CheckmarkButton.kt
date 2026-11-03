@@ -47,7 +47,8 @@ import org.isoron.uhabits.utils.toMeasureSpec
 data class CheckmarkButtonState(
     val color: Int,
     val value: Int,
-    val notes: String
+    val notes: String,
+    val isNegative: Boolean = false
 )
 
 class CheckmarkButtonView(
@@ -81,7 +82,8 @@ class CheckmarkButtonView(
         val v = Entry.nextToggleValue(
             value = state.value,
             isSkipEnabled = preferences.isSkipEnabled,
-            areQuestionMarksEnabled = preferences.areQuestionMarksEnabled
+            areQuestionMarksEnabled = preferences.areQuestionMarksEnabled,
+            isNegative = state.isNegative
         )
         state = state.copy(value = v)
         onToggle(v, state.notes)
@@ -134,22 +136,31 @@ class CheckmarkButtonView(
         }
 
         fun draw(canvas: Canvas) {
-            paint.color = when (state.value) {
-                YES_MANUAL, YES_AUTO, SKIP -> state.color
-                NO -> {
-                    if (preferences.areQuestionMarksEnabled) {
-                        mediumContrastColor
-                    } else {
-                        lowContrastColor
-                    }
+            paint.color = if (state.isNegative) {
+                // Negative habit: a check means "I did the thing I wanted to avoid", so it is
+                // drawn dark. A cross (or no data) is a success and gets the habit color.
+                when (state.value) {
+                    YES_MANUAL, YES_AUTO -> lowContrastColor
+                    else -> state.color
                 }
-                else -> lowContrastColor
+            } else {
+                when (state.value) {
+                    YES_MANUAL, YES_AUTO, SKIP -> state.color
+                    NO -> {
+                        if (preferences.areQuestionMarksEnabled) {
+                            mediumContrastColor
+                        } else {
+                            lowContrastColor
+                        }
+                    }
+                    else -> lowContrastColor
+                }
             }
             val id = when (state.value) {
                 SKIP -> R.string.fa_skipped
                 NO -> R.string.fa_times
                 UNKNOWN -> {
-                    if (preferences.areQuestionMarksEnabled) {
+                    if (preferences.areQuestionMarksEnabled && !state.isNegative) {
                         R.string.fa_question
                     } else {
                         R.string.fa_times

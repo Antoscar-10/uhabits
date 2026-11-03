@@ -31,6 +31,7 @@ data class Habit(
     var frequency: Frequency = Frequency.DAILY,
     var id: Long? = null,
     var isArchived: Boolean = false,
+    var isNegative: Boolean = false,
     var name: String = "",
     var position: Int = 0,
     var question: String = "",
@@ -54,13 +55,28 @@ data class Habit(
     val isNumerical: Boolean
         get() = type == HabitType.NUMERICAL
 
+    /**
+     * True for yes/no habits that track something the user wants to avoid ("negative" habits).
+     *
+     * For these habits the stored entries keep their literal meaning (a check means "I did it",
+     * a cross means "I did not"), but success is inverted: a day is a success when the user did
+     * NOT do the habit, and days without any data count as successes. Scores, streaks and the
+     * completion flag are computed accordingly. Negative habits are always daily.
+     *
+     * The flag [isNegative] is ignored for numerical habits (they already support an "at most"
+     * target).
+     */
+    val isInverted: Boolean
+        get() = isNegative && !isNumerical
+
     val uriString: String
         get() = "content://org.isoron.uhabits/habit/$id"
 
     fun hasReminder(): Boolean = reminder != null
 
     fun isCompletedOn(date: LocalDate): Boolean {
-        return computedEntries.get(date).completed
+        val entry = computedEntries.get(date)
+        return if (isInverted) Entry.isInvertedSuccess(entry.value) else entry.completed
     }
 
     fun isCompletedToday(): Boolean {
@@ -74,6 +90,9 @@ data class Habit(
     }
 
     fun recompute() {
+        // Negative habits are always evaluated day by day.
+        val frequency = if (isInverted) Frequency.DAILY else this.frequency
+
         computedEntries.recomputeFrom(
             originalEntries = originalEntries,
             frequency = frequency,
@@ -84,7 +103,8 @@ data class Habit(
             frequency = frequency,
             isNumerical = isNumerical,
             targetType = targetType,
-            targetValue = targetValue
+            targetValue = targetValue,
+            isInverted = isInverted
         )
 
         val today = getToday()
@@ -100,7 +120,8 @@ data class Habit(
             targetValue = targetValue,
             computedEntries = computedEntries,
             from = from,
-            to = to
+            to = to,
+            isInverted = isInverted
         )
 
         streaks.recompute(
@@ -109,7 +130,8 @@ data class Habit(
             to,
             isNumerical,
             targetValue,
-            targetType
+            targetType,
+            isInverted
         )
     }
 
@@ -120,6 +142,7 @@ data class Habit(
         this.frequency = other.frequency
         // this.id should not be copied
         this.isArchived = other.isArchived
+        this.isNegative = other.isNegative
         this.name = other.name
         this.position = other.position
         this.question = other.question
@@ -141,6 +164,7 @@ data class Habit(
         if (frequency != other.frequency) return false
         if (id != other.id) return false
         if (isArchived != other.isArchived) return false
+        if (isNegative != other.isNegative) return false
         if (name != other.name) return false
         if (position != other.position) return false
         if (question != other.question) return false
@@ -161,6 +185,7 @@ data class Habit(
         result = 31 * result + frequency.hashCode()
         result = 31 * result + (id?.hashCode() ?: 0)
         result = 31 * result + isArchived.hashCode()
+        result = 31 * result + isNegative.hashCode()
         result = 31 * result + name.hashCode()
         result = 31 * result + position
         result = 31 * result + question.hashCode()

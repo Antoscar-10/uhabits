@@ -191,6 +191,9 @@
     <string name="target_type">Target Type</string>
     <string name="target_type_at_least">At least</string>
     <string name="target_type_at_most">At most</string>
+    <string name="habit_goal">Goal</string>
+    <string name="habit_goal_positive">Positive - I want to do it</string>
+    <string name="habit_goal_negative">Negative - I want to avoid it</string>
     <string name="example_question_boolean">e.g. Did you exercise today?</string>
     <string name="question">Question</string>
     <string name="target">Target</string>

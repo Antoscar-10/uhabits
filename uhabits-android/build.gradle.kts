@@ -80,6 +80,8 @@ android {
         }
 
         debug {
+            // Separate app id, so it can live next to the official Loop
+            applicationIdSuffix = ".neg"
             enableUnitTestCoverage = true
         }
     }

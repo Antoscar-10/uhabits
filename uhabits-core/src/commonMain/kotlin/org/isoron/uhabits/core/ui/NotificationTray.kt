@@ -114,7 +114,9 @@ open class NotificationTray(
         private val reminderTime: Long = data.reminderTime
 
         override suspend fun doInBackground() {
-            isCompleted = habit.isCompletedToday()
+            // For negative habits, days without data already count as successes, so we only
+            // skip the reminder once the user has actually answered for today.
+            isCompleted = if (habit.isInverted) habit.isEnteredToday() else habit.isCompletedToday()
         }
 
         override fun onPostExecute() {

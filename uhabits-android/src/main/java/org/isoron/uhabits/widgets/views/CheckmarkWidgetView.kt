@@ -51,6 +51,7 @@ class CheckmarkWidgetView : HabitWidgetView {
     var entryValue = 0
     var entryState = 0
     var isNumerical = false
+    var isNegative = false
     private var preferences: Preferences? = null
 
     constructor(context: Context?) : super(context) {
@@ -67,21 +68,21 @@ class CheckmarkWidgetView : HabitWidgetView {
         val bgColor: Int
         val fgColor: Int
         setShadowAlpha(0x4f)
-        when (entryState) {
-            YES_MANUAL, SKIP, YES_AUTO -> {
-                bgColor = activeColor
-                fgColor = res.getColor(R.attr.contrast0)
-                backgroundPaint!!.color = bgColor
-                frame!!.setBackgroundDrawable(background)
-            }
-            NO, UNKNOWN -> {
-                bgColor = res.getColor(R.attr.cardBgColor)
-                fgColor = res.getColor(R.attr.contrast60)
-            }
-            else -> {
-                bgColor = res.getColor(R.attr.cardBgColor)
-                fgColor = res.getColor(R.attr.contrast60)
-            }
+        // The widget is filled with the habit color when the day is a success. For negative
+        // habits, a success means that the habit was NOT performed (no check).
+        val isSuccess = if (isNegative && !isNumerical) {
+            entryState != YES_MANUAL && entryState != YES_AUTO
+        } else {
+            entryState == YES_MANUAL || entryState == SKIP || entryState == YES_AUTO
+        }
+        if (isSuccess) {
+            bgColor = activeColor
+            fgColor = res.getColor(R.attr.contrast0)
+            backgroundPaint!!.color = bgColor
+            frame!!.setBackgroundDrawable(background)
+        } else {
+            bgColor = res.getColor(R.attr.cardBgColor)
+            fgColor = res.getColor(R.attr.contrast60)
         }
         ring.setPercentage(percentage)
         ring.setColor(fgColor)
@@ -113,7 +114,7 @@ class CheckmarkWidgetView : HabitWidgetView {
                 SKIP -> resources.getString(R.string.fa_skipped)
                 UNKNOWN -> {
                     run {
-                        if (preferences!!.areQuestionMarksEnabled) {
+                        if (preferences!!.areQuestionMarksEnabled && !isNegative) {
                             return resources.getString(R.string.fa_question)
                         } else {
                             resources.getString(R.string.fa_times)

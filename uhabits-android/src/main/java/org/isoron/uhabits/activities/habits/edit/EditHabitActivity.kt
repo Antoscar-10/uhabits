@@ -86,6 +86,7 @@ class EditHabitActivity : AppCompatActivity() {
     var reminderMin = -1
     var reminderDays: WeekdayList = WeekdayList.EVERY_DAY
     var targetType = NumericalHabitType.AT_LEAST
+    var isNegative = false
 
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
@@ -109,6 +110,7 @@ class EditHabitActivity : AppCompatActivity() {
             freqNum = habit.frequency.numerator
             freqDen = habit.frequency.denominator
             targetType = habit.targetType
+            isNegative = habit.isNegative
             habit.reminder?.let {
                 reminderHour = it.hour
                 reminderMin = it.minute
@@ -130,6 +132,7 @@ class EditHabitActivity : AppCompatActivity() {
             color = PaletteColor(state.getInt("paletteColor"))
             freqNum = state.getInt("freqNum")
             freqDen = state.getInt("freqDen")
+            isNegative = state.getBoolean("isNegative")
             reminderHour = state.getInt("reminderHour")
             reminderMin = state.getInt("reminderMin")
             reminderDays = WeekdayList(state.getInt("reminderDays"))
@@ -147,6 +150,7 @@ class EditHabitActivity : AppCompatActivity() {
                 binding.nameInput.hint = getString(R.string.measurable_short_example)
                 binding.questionInput.hint = getString(R.string.measurable_question_example)
                 binding.frequencyOuterBox.visibility = View.GONE
+                binding.negativeOuterBox.visibility = View.GONE
             }
         }
 
@@ -174,6 +178,20 @@ class EditHabitActivity : AppCompatActivity() {
                 populateFrequency()
             }
             picker.dismissCurrentAndShow(supportFragmentManager, "frequencyPicker")
+        }
+
+        populateNegative()
+        binding.negativePicker.setOnClickListener {
+            val builder = AlertDialog.Builder(this)
+            val arrayAdapter = ArrayAdapter<String>(this, android.R.layout.select_dialog_item)
+            arrayAdapter.add(getString(R.string.habit_goal_positive))
+            arrayAdapter.add(getString(R.string.habit_goal_negative))
+            builder.setAdapter(arrayAdapter) { dialog, which ->
+                isNegative = which == 1
+                populateNegative()
+                dialog.dismiss()
+            }
+            builder.show()
         }
 
         populateTargetType()
@@ -282,7 +300,9 @@ class EditHabitActivity : AppCompatActivity() {
             habit.reminder = null
         }
 
-        habit.frequency = Frequency(freqNum, freqDen)
+        habit.isNegative = habitType == HabitType.YES_NO && isNegative
+        // Negative habits are always evaluated day by day
+        habit.frequency = if (habit.isNegative) Frequency.DAILY else Frequency(freqNum, freqDen)
         if (habitType == HabitType.NUMERICAL) {
             habit.targetValue = binding.targetInput.text.toString().toDouble()
             habit.targetType = targetType
@@ -294,13 +314,15 @@ class EditHabitActivity : AppCompatActivity() {
             EditHabitCommand(
                 component.habitList,
                 habitId,
-                habit
+                habit,
+                anchorNegativeHabit = true
             )
         } else {
             CreateHabitCommand(
                 component.modelFactory,
                 component.habitList,
-                habit
+                habit,
+                anchorNegativeHabit = true
             )
         }
         component.commandRunner.run(command)
@@ -347,6 +369,18 @@ class EditHabitActivity : AppCompatActivity() {
         }
     }
 
+    private fun populateNegative() {
+        binding.negativePicker.text = if (isNegative) {
+            getString(R.string.habit_goal_negative)
+        } else {
+            getString(R.string.habit_goal_positive)
+        }
+        // Negative habits are always daily, so the frequency picker is only for positive ones
+        if (habitType == HabitType.YES_NO) {
+            binding.frequencyOuterBox.visibility = if (isNegative) View.GONE else View.VISIBLE
+        }
+    }
+
     private fun populateTargetType() {
         binding.targetTypePicker.text = when (targetType) {
             NumericalHabitType.AT_MOST -> getString(R.string.target_type_at_most)
@@ -377,6 +411,7 @@ class EditHabitActivity : AppCompatActivity() {
             putInt("androidColor", androidColor)
             putInt("freqNum", freqNum)
             putInt("freqDen", freqDen)
+            putBoolean("isNegative", isNegative)
             putInt("reminderHour", reminderHour)
             putInt("reminderMin", reminderMin)
             putInt("reminderDays", reminderDays.toInteger())

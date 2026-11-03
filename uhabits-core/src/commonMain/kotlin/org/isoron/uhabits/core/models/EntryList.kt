@@ -126,7 +126,8 @@ open class EntryList {
      * Recomputes the completed flag of every entry based on the frequency and target of the
      * habit.
      *
-     * For boolean habits, an entry is completed when its value is neither NO nor UNKNOWN. For
+     * For boolean habits, an entry is completed when its value is neither NO nor UNKNOWN (or,
+     * for inverted/negative habits, when its value is neither YES_MANUAL nor YES_AUTO). For
      * numerical habits, completion is evaluated per period (day, week, or month, depending on the
      * frequency): the sum of the clamped values of the entries in the period is compared against
      * the period target, which is reduced by the number of skipped days.
@@ -136,7 +137,8 @@ open class EntryList {
         frequency: Frequency,
         isNumerical: Boolean,
         targetType: NumericalHabitType,
-        targetValue: Double
+        targetValue: Double,
+        isInverted: Boolean = false
     ) {
         if (isNumerical) {
             val firstWeekday = getFirstWeekday()
@@ -177,7 +179,11 @@ open class EntryList {
             }
         } else {
             for (entry in getKnown()) {
-                val completed = entry.value != Entry.NO && entry.value != Entry.UNKNOWN
+                val completed = if (isInverted) {
+                    Entry.isInvertedSuccess(entry.value)
+                } else {
+                    entry.value != Entry.NO && entry.value != Entry.UNKNOWN
+                }
                 if (entry.completed != completed) {
                     add(entry.copy(completed = completed))
                 }

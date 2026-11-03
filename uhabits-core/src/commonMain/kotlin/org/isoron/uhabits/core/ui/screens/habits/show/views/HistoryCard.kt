@@ -93,7 +93,8 @@ class HistoryCardPresenter(
         screen.showCheckmarkPopup(
             entry.value,
             entry.notes,
-            habit.color
+            habit.color,
+            habit.isInverted
         ) { newValue, newNotes ->
             commandRunner.run(
                 CreateRepetitionCommand(
@@ -112,7 +113,8 @@ class HistoryCardPresenter(
         val nextValue = Entry.nextToggleValue(
             value = entry.value,
             isSkipEnabled = preferences.isSkipEnabled,
-            areQuestionMarksEnabled = preferences.areQuestionMarksEnabled
+            areQuestionMarksEnabled = preferences.areQuestionMarksEnabled,
+            isNegative = habit.isInverted
         )
         commandRunner.run(
             CreateRepetitionCommand(
@@ -158,7 +160,17 @@ class HistoryCardPresenter(
             val today = getToday()
             val oldest = habit.computedEntries.getKnown().lastOrNull()?.date ?: today
             val entries = habit.computedEntries.getByInterval(oldest, today)
-            val series = if (habit.isNumerical) {
+            val series = if (habit.isInverted) {
+                // Negative habits: days where the user avoided the habit are the successes
+                // (colored); days where they did it (a check) are shown in grey.
+                entries.map {
+                    when (it.value) {
+                        YES_MANUAL, YES_AUTO -> GREY
+                        SKIP -> HATCHED
+                        else -> ON
+                    }
+                }
+            } else if (habit.isNumerical) {
                 entries.map {
                     when {
                         it.value == SKIP -> HATCHED
@@ -210,6 +222,7 @@ class HistoryCardPresenter(
             selectedValue: Int,
             notes: String,
             color: PaletteColor,
+            isNegative: Boolean = false,
             callback: CheckMarkDialogCallback
         )
     }

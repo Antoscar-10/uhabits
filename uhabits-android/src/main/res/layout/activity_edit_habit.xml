@@ -140,6 +140,22 @@
                 </LinearLayout>
             </FrameLayout>
 
+            <!-- Goal: positive or negative habit -->
+            <FrameLayout
+                android:id="@+id/negativeOuterBox"
+                style="@style/FormOuterBox">
+                <LinearLayout style="@style/FormInnerBox">
+                    <TextView
+                        style="@style/FormLabel"
+                        android:text="@string/habit_goal" />
+                    <TextView
+                        style="@style/FormDropdown"
+                        android:id="@+id/negativePicker"
+                        android:textColor="?attr/contrast100"
+                        />
+                </LinearLayout>
+            </FrameLayout>
+
             <!-- Frequency -->
             <FrameLayout
                 android:id="@+id/frequencyOuterBox"

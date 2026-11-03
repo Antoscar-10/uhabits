@@ -70,7 +70,8 @@ class ScoreList {
         targetValue: Double,
         computedEntries: EntryList,
         from: LocalDate,
-        to: LocalDate
+        to: LocalDate,
+        isInverted: Boolean = false
     ) {
         map.clear()
         var rollingSum = 0.0
@@ -79,6 +80,11 @@ class ScoreList {
         val freq = frequency.toDouble()
         val values = computedEntries.getByInterval(from, to).map { it.value }.toIntArray()
         val isAtMost = numericalHabitType == NumericalHabitType.AT_MOST
+
+        // For negative (inverted) boolean habits, a day is a success when the habit was NOT
+        // performed, and days without data count as successes.
+        fun isBooleanSuccess(v: Int): Boolean =
+            if (isInverted) Entry.isInvertedSuccess(v) && v != Entry.SKIP else v == Entry.YES_MANUAL
 
         // For non-daily boolean habits, we double the numerator and the denominator to smooth
         // out irregular repetition schedules (for example, weekly habits performed on different
@@ -99,7 +105,7 @@ class ScoreList {
                     val oldest = window.removeFirst()
                     if (isNumerical) {
                         rollingSum -= max(0, oldest)
-                    } else if (oldest == Entry.YES_MANUAL) {
+                    } else if (isBooleanSuccess(oldest)) {
                         rollingSum -= 1.0
                     }
                 }
@@ -126,7 +132,7 @@ class ScoreList {
 
                     previousValue = compute(freq, previousValue, percentageCompleted)
                 } else {
-                    if (value == Entry.YES_MANUAL) {
+                    if (isBooleanSuccess(value)) {
                         rollingSum += 1.0
                     }
                     val percentageCompleted = min(1.0, rollingSum / numerator)

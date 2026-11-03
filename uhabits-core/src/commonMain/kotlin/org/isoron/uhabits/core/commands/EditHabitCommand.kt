@@ -18,6 +18,8 @@
  */
 package org.isoron.uhabits.core.commands
 
+import org.isoron.platform.time.getToday
+import org.isoron.uhabits.core.models.Entry
 import org.isoron.uhabits.core.models.Habit
 import org.isoron.uhabits.core.models.HabitList
 import org.isoron.uhabits.core.models.HabitNotFoundException
@@ -25,13 +27,18 @@ import org.isoron.uhabits.core.models.HabitNotFoundException
 data class EditHabitCommand(
     val habitList: HabitList,
     val habitId: Long,
-    val modified: Habit
+    val modified: Habit,
+    val anchorNegativeHabit: Boolean = false
 ) : Command {
     override fun run() {
         val habit = habitList.getById(habitId) ?: throw HabitNotFoundException()
         habit.copyFrom(modified)
         habitList.update(habit)
         habit.observable.notifyListeners()
+        // See CreateHabitCommand: negative habits need a starting day.
+        if (anchorNegativeHabit && habit.isInverted && habit.originalEntries.getKnown().isEmpty()) {
+            habit.originalEntries.add(Entry(getToday(), Entry.NO))
+        }
         habit.recompute()
         habitList.resort()
     }
