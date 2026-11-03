@@ -11,7 +11,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: android-actions/setup-android@v3
+      - run: yes | sdkmanager --licenses > /dev/null || true
       - uses: gradle/actions/setup-gradle@v4
       - name: Chiave di firma fissa (opzionale)
         env:
